@@ -324,16 +324,32 @@ def process_training_data(train_page_names):
     model_data['bbox_size'] = bbox_size
     model_data['labels_train'] = np.concatenate((labels_train[0::2], labels_train[1::2])).tolist()
     print('- Adding noise to a half of the data')
-    for i in range(noisy.shape[0]):
-        row = noisy[i].shape[0]
-        mean = 0
-        var = 0.1
-        sigma = var**0.5
-        gauss = np.random.normal(mean,sigma,(row))
-        gauss = gauss.reshape(row)
-        noisy[i] += gauss
+    # # Gaussian noise
     # for i in range(noisy.shape[0]):
-    #     noisy[i] = random_noise(noisy[i], mode='gaussian', seed=2, clip=True)
+    #     row = noisy[i].shape[0]
+    #     mean = 0
+    #     var = 0.1
+    #     sigma = var**0.5
+    #     gauss = np.random.normal(mean,sigma,(row))
+    #     gauss = gauss.reshape(row)
+    #     noisy[i] += gauss
+    # Salt and pepper noise
+    for i in range(noisy.shape[0]):
+        # Makr a copy
+        copy = noisy[i]
+        # Convert to floats between and inclusive to 0 and 1
+        copy.astype(np.float16, copy=False)
+        copy = np.multiply(copy, (1/255))
+        # Create some noise
+        noise = np.random.randint(20, size=(copy.shape[0]))
+        # When the noise has a zero, add a pepper to the copy
+        # Pepper
+        copy = np.where(noise==0, 0, copy)
+        # When the noise has a value equal to the top, add a salt to the copy
+        # Salt
+        copy = np.where(noise==(19), 1, copy)
+        # Convert back to values out of 255 (RGB)
+        noisy[i] = np.multiply(copy, (255))
 
     print('- Reducing to 10 dimensions')
     fvectors_train_clean, fvectors_train_noisy = reduce_dimensions(np.concatenate((clean, noisy), axis=0), model_data, "Train", noisy.shape[0])
@@ -362,7 +378,7 @@ def load_test_page(page_name, model):
         count += np.sum(fvectors_test[i])
     determine =  count/(fvectors_test.shape[0] * fvectors_test.shape[1])
     # denoise images by applying median filter
-    if (determine < 240):
+    if (determine < 239.0):
         for i in range(fvectors_test.shape[0]):
             fvectors_test[i] = ndimage.median_filter(fvectors_test[i], 3)
     # Perform the dimensionality reduction.
