@@ -4,7 +4,7 @@ usage:
 
 DO NOT ALTER THIS FILE.
 
-version: v1.0
+version: v1.1
 """
 
 import os
@@ -18,12 +18,24 @@ NUM_TEST_PAGES = 6  # Number of pages in the test set
 EXPECTED_DIMENSIONALITY = 10  # Expected feature vector dimensionality
 MAX_MODEL_SIZE = 3145728  # Max size of model file in bytes
 
+
 def validate_test_data(page_data_all_pages):
     """Check that test data has the correct dimensionality."""
     for page_data in page_data_all_pages:
         if page_data.shape[1] != EXPECTED_DIMENSIONALITY:
             return False
     return True
+
+
+def load_bounding_box(page_name):
+    """Load the bounding box data."""
+    bboxes = []
+    with open(page_name + '.bb.csv', 'r') as f:
+        for line in f:
+            data = line.split(',')
+            bboxes.append([int(x) for x in (data[:4])])
+
+    return np.array(bboxes)
 
 
 def evaluate(testset):
@@ -58,6 +70,12 @@ def evaluate(testset):
     # Run the classifier on each of the test pages
     output_labels = [system.classify_page(page_data, model)
                      for page_data in page_data_all_pages]
+
+    if 'correct_errors' in dir(system):
+        bboxes = [load_bounding_box(page_name) for page_name in page_names]
+        output_labels = [system.correct_errors(p, o, b, model)
+                         for p, o, b in zip(page_data_all_pages,
+                                            output_labels, bboxes)]
 
     # Compute the percentage correct classifications for each test page
     scores = [(100.0 * np.sum(output_label == true_label)) / output_label.shape[0]
