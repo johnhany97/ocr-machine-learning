@@ -38,8 +38,8 @@ def reduce_dimensions(features, model, mode="Train", split=0, start=1, end=50):
     if (mode == "Train"): #dimensionality reduction for train data
         # Generate PCA
         # grab training data and their labels from model
-        labels_train_clean = np.array(model['labels_clean'])
-        labels_train_noisy = np.array(model['labels_noisy'])
+        labels_train_clean = np.array(model['labels_train'])[0:split + 1]
+        labels_train_noisy = np.array(model['labels_train'])[split + 1: features.shape[0]]
         clean = features[0:split + 1]
         noisy = features[split + 1: features.shape[0]]
         # For clean data
@@ -73,7 +73,8 @@ def reduce_dimensions(features, model, mode="Train", split=0, start=1, end=50):
         for i in range(features.shape[0]):
             count += np.sum(features[i])
         determine =  count/(features.shape[0] * features.shape[1])
-        if (determine > 239):
+        print(determine)
+        if (determine > 240):
             print("treating as clean")
             v = np.array(model['v_clean'])
             return np.dot((features - np.mean(features)), v)
@@ -322,14 +323,10 @@ def process_training_data(train_page_names):
     fvectors_train_full = images_to_feature_vectors(images_train, bbox_size)
     clean = fvectors_train_full[0::2]
     noisy = fvectors_train_full[1::2]
-
     model_data = dict()
-    model_data['labels_clean'] = labels_train[0::2].tolist()
-    model_data['labels_noisy'] = labels_train[1::2].tolist()
-
     model_data['bbox_size'] = bbox_size
-
-    print('- Adding noise to a third of the data')
+    model_data['labels_train'] = np.concatenate((labels_train[0::2], labels_train[1::2])).tolist()
+    print('- Adding noise to a half of the data')
     for i in range(noisy.shape[0]):
         row = noisy[i].shape[0]
         mean = 0
@@ -342,8 +339,7 @@ def process_training_data(train_page_names):
     print('- Reducing to 10 dimensions')
     fvectors_train_clean, fvectors_train_noisy = reduce_dimensions(np.concatenate((clean, noisy), axis=0), model_data, "Train", noisy.shape[0])
 
-    model_data['fvectors_train_clean'] = fvectors_train_clean.tolist()
-    model_data['fvectors_train_noisy'] = fvectors_train_noisy.tolist()
+    model_data['fvectors_train'] = np.concatenate((fvectors_train_clean, fvectors_train_noisy)).tolist()
 
     return model_data
 
@@ -376,9 +372,9 @@ def classify_page(page, model):
     page - matrix, each row is a feature vector to be classified
     model - dictionary, stores the output of the training stage
     """
-    fvectors_train = np.array(model['fvectors_train_clean'])
+    fvectors_train = np.array(model['fvectors_train'])
     # fvecotrs_clean = np.array
-    labels_train = np.array(model['labels_clean'])
+    labels_train = np.array(model['labels_train'])
     x = np.dot(page, fvectors_train.transpose())
     modtest = np.sqrt(np.sum(page * page, axis=1))
     modtrain = np.sqrt(np.sum(fvectors_train * fvectors_train, axis=1))
