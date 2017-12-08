@@ -14,8 +14,9 @@ import utils.utils as utils
 from scipy import ndimage
 import scipy
 import cv2
+from skimage.util import random_noise
 
-def reduce_dimensions(features, model, mode="Train", split=0, start=1, end=50):
+def reduce_dimensions(features, model, mode="Train", split=0, start=1, end=60):
     """Dummy methods that just takes 1st 10 pixels.
 
     Params:
@@ -73,13 +74,10 @@ def reduce_dimensions(features, model, mode="Train", split=0, start=1, end=50):
         for i in range(features.shape[0]):
             count += np.sum(features[i])
         determine =  count/(features.shape[0] * features.shape[1])
-        print(determine)
         if (determine > 240):
-            print("treating as clean")
             v = np.array(model['v_clean'])
             return np.dot((features - np.mean(features)), v)
         else:
-            print("treating as noisy")
             v = np.array(model['v_noisy'])
             return np.dot((features - np.mean(features)), v)
 
@@ -248,12 +246,12 @@ def classify_training(data, labels, features):
     features - a vector if indices that select the feature to use
     returns: (score) - a percentage of correct labels
     """
-
-    # Select the desired features from the training and test data
-    train = data[0::2, features]
-    test = data[1::2, features]
-    train_labels = labels[0::2]
-    test_labels = labels[1::2]
+    # # Select the desired features from the training and test data
+    split = int(data.shape[0] * 0.5)
+    train = data[0:split, features]
+    test = data[split:data.shape[0], features]
+    train_labels = labels[0:split]
+    test_labels = labels[split:data.shape[0]]
     # Super compact implementation of nearest neighbour
     x= np.dot(test, train.transpose())
     modtest = np.sqrt(np.sum(test * test, axis=1))
@@ -270,7 +268,6 @@ def get_bounding_box_size(images):
     height = max(image.shape[0] for image in images)
     width = max(image.shape[1] for image in images)
     return height, width
-
 
 def images_to_feature_vectors(images, bbox_size=None):
     """Reformat characters into feature vectors.
@@ -335,6 +332,8 @@ def process_training_data(train_page_names):
         gauss = np.random.normal(mean,sigma,(row))
         gauss = gauss.reshape(row)
         noisy[i] += gauss
+    # for i in range(noisy.shape[0]):
+    #     noisy[i] = random_noise(noisy[i], mode='gaussian', seed=2, clip=True)
 
     print('- Reducing to 10 dimensions')
     fvectors_train_clean, fvectors_train_noisy = reduce_dimensions(np.concatenate((clean, noisy), axis=0), model_data, "Train", noisy.shape[0])
@@ -357,9 +356,15 @@ def load_test_page(page_name, model):
     bbox_size = model['bbox_size']
     images_test = utils.load_char_images(page_name)
     fvectors_test = images_to_feature_vectors(images_test, bbox_size)
-    # denoise images by applying median filter
+    #compute how noisy
+    count = 0
     for i in range(fvectors_test.shape[0]):
-        fvectors_test[i] = ndimage.median_filter(fvectors_test[i], 3)
+        count += np.sum(fvectors_test[i])
+    determine =  count/(fvectors_test.shape[0] * fvectors_test.shape[1])
+    # denoise images by applying median filter
+    if (determine < 240):
+        for i in range(fvectors_test.shape[0]):
+            fvectors_test[i] = ndimage.median_filter(fvectors_test[i], 3)
     # Perform the dimensionality reduction.
     fvectors_test_reduced = reduce_dimensions(fvectors_test, model, "Test")
     return fvectors_test_reduced
@@ -373,7 +378,6 @@ def classify_page(page, model):
     model - dictionary, stores the output of the training stage
     """
     fvectors_train = np.array(model['fvectors_train'])
-    # fvecotrs_clean = np.array
     labels_train = np.array(model['labels_train'])
     x = np.dot(page, fvectors_train.transpose())
     modtest = np.sqrt(np.sum(page * page, axis=1))
