@@ -47,12 +47,12 @@ improvement in the result, I decided not to run that step in the
 classification of the test data.
 
 ## Performance
-Page 1: score = 97.4% correct
-Page 2: score = 96.4% correct
-Page 3: score = 86.2% correct
-Page 4: score = 60.4% correct
-Page 5: score = 60.9% correct
-Page 6: score = 50.7% correct
+-Page 1: score = 97.4% correct
+-Page 2: score = 96.4% correct
+-Page 3: score = 86.2% correct
+-Page 4: score = 60.4% correct
+-Page 5: score = 60.9% correct
+-Page 6: score = 50.7% correct
 
 ## Other information (Optional, Max 100 words)
 In the training stage. After dividing the given train data into two parts, I
