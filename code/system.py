@@ -15,6 +15,7 @@ from scipy import ndimage
 import scipy
 import cv2
 from skimage.util import random_noise
+import operator
 
 def reduce_dimensions(features, model, mode="Train", split=0, start=1, end=60):
     """Dummy methods that just takes 1st 10 pixels.
@@ -142,7 +143,7 @@ def reduce_principal_components(train_data, train_labels):
     print("-- Sorting highest scoring features")
     sorted_indexes = []
     for i in range(divNP.shape[0]):
-        sorted_indexes.append(np.argsort(-divNP[i, :])[0:10])
+        sorted_indexes.append(np.argsort(-divNP[i, :])[0:20])
     sortNP = np.array(sorted_indexes)
     # Compute how many times a specific feature was repeated
     print("-- Computing how many times a specific feature was repeated")
@@ -393,6 +394,19 @@ def load_test_page(page_name, model):
     if (determine < 239.0):
         for i in range(fvectors_test.shape[0]):
             fvectors_test[i] = ndimage.median_filter(fvectors_test[i], 3)
+    #save the fact it was noisy if it was
+    if 'test_noisy' in model:
+        x = np.array(model['test_noisy'])
+        if (determine < 239.0):
+            x = np.append(x, True)
+        else:
+            x = np.append(x, False)
+        model['test_noisy'] = x.tolist()
+    else:
+        if (determine < 239.0):
+            model['test_noisy'] = [True]
+        else:
+            model['test_noisy'] = [False]
     # Perform the dimensionality reduction.
     fvectors_test_reduced = reduce_dimensions(fvectors_test, model, "Test")
     return fvectors_test_reduced
@@ -411,9 +425,30 @@ def classify_page(page, model):
     modtest = np.sqrt(np.sum(page * page, axis=1))
     modtrain = np.sqrt(np.sum(fvectors_train * fvectors_train, axis=1))
     dist = x / np.outer(modtest, modtrain.transpose()); # cosine distance
-    nearest = np.argmax(dist, axis=1)
-
-    return labels_train[nearest]
+    m = np.array(model['test_noisy'])
+    determine_noisy = m[0]
+    new_m = np.delete(m, 0)
+    model['test_noisy'] = new_m.tolist()
+    if (determine_noisy):
+        k = int((fvectors_train.shape[0] ** 0.5)/2)
+        nearest_k = np.argsort(-dist, axis=1, kind='quicksort')[:, 0:k]
+        # k-nearest neighbor
+        labels = []
+        for i in range(nearest_k.shape[0]):
+            potential_labels = {}
+            for j in range(nearest_k.shape[1]):
+                label = labels_train[nearest_k[i, j]]
+                if label in potential_labels:
+                    potential_labels[label] += 1
+                else:
+                    potential_labels[label] = 1
+            sort_list = sorted(potential_labels.items(), key=operator.itemgetter(1), reverse=True)
+            labels.append(sort_list[0][0])
+        return np.array(labels)
+    else:
+        # nearest-neighbor
+        nearest = np.argmax(dist, axis=1)
+        return labels_train[nearest]
 
 #########################################################################
 # OLD VERSION OF THIS FILE
