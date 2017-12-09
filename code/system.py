@@ -305,15 +305,35 @@ def get_bounding_box_size(images):
     return height, width
 
 def correct_errors(page, labels, bboxes, model):
-    """Dummy error correction. Returns labels unchanged.
+    """Error correction function
 
-    parameters:
+    Takes labels, divides them into words then starts checking if words have potential matches
+    if they do, we check if the first one is the exact word (no need to update)
+    if they're not the same, we check the potential matches if there's a string with only one letter difference
 
+    Problems:
+        - inefficient
+        - slows down computation
+
+    Parameters:
     page - 2d array, each row is a feature vector to be classified
     labels - the output classification label for each feature vector
     bboxes - 2d array, each row gives the 4 bounding box coords of the character
     model - dictionary, stores the output of the training stage
+
+    Returns:
+    Labels after being subjected to error correction
     """
+    # english = model['english']
+    # all_words = divide_to_words(labels, bboxes)
+    # for i in range(len(all_words)):
+    #     potential_match = difflib.get_close_matches(all_words[i], english)
+    #     if (len(all_words[i]) > 1 and len(potential_match) > 0 and potential_match[0] != all_words[i]):
+    #         print('checking word ', all_words[i], ' potential matches')
+    #         for j in potential_match:
+    #             difference = sum (j != all_words[i] for i in range(len(j)))
+    #             if (difference == 1):
+    #                 print('we will change: ',  all_words[i], ' to ', j)
 
     return labels
 
