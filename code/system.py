@@ -306,7 +306,7 @@ def get_bounding_box_size(images):
     width = max(image.shape[1] for image in images)
     return height, width
 
-def correct_errors(page, labels, bboxes, model, use=False, version='One'):
+def correct_errors(page, labels, bboxes, model, use=True, version='One'):
     """Error correction function
 
     Version One: (Uses NLTK and autocorrect libraries)
@@ -314,12 +314,12 @@ def correct_errors(page, labels, bboxes, model, use=False, version='One'):
     if not, we autocorrect the word immediately.
     Else, we move on to the following word
     Results obtained from this method:
-    Page 1: score = 94.4% correct
-    Page 2: score = 95.3% correct
-    Page 3: score = 87.7% correct
-    Page 4: score = 60.6% correct
-    Page 5: score = 59.6% correct
-    Page 6: score = 49.2% correct
+    Page 1: score = 94.3% correct
+    Page 2: score = 95.1% correct
+    Page 3: score = 88.0% correct
+    Page 4: score = 60.5% correct
+    Page 5: score = 60.0% correct
+    Page 6: score = 49.4% correct
 
     Version Two: (Required "English" dictionary in the model)
     Takes labels, divides them into words then starts checking if words have potential matches
@@ -345,11 +345,10 @@ def correct_errors(page, labels, bboxes, model, use=False, version='One'):
     if (use): #Do some error correction
         all_words, current_labels = divide_to_words(labels, bboxes)
         if (version=='One'): #Uses nltk and autocorrect libraries
-            word_list = brown.words()
-            word_set = set(word_list)
+            english = set(brown.words())
             # Check if word is in set
             for i in range(len(all_words)):
-                if not (all_words[i] in word_set):
+                if not (all_words[i] in english):
                     old = all_words[i]
                     all_words[i] = spell(all_words[i])
                     if (len(old) < len(all_words[i])):

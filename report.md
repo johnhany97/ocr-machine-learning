@@ -31,7 +31,7 @@ of samples to be tested.
 
 ## Error Correction (Max 200 Words)
 Results:
-- 94.4%, 95.3%, 87.7%, 60.6%, 59.6%, 49.2%
+- 94.3%, 95.1%, 88.0%, 60.5%, 60.0%, 49.4%
 Two variants have been attempted. First implementation (currently called version two in the code) was dependent on an English dictionary being imported into the model file while training. It also only changed the word if the amount of characters between the word and the suggestion was only 1. This is because allowing changes that involved more than just one character would have been probably changing the word into something completely different. Problems faced with this implementation was that it was extremely slow and its results were terribly poor. The second implementation (currently called version one in the code) works differently. It uses two libraries. NLTK is being used to check if a word is spelled correct. Autocorrect is used to correct this word. Results obtained from the second experiment are the ones mentioned above this paragraph. Error correction is not being used in the final submission. Even though the second implementation works within the time  limit, It's producing worse results (except for the minor improvement in pages 3 and 4).
 Both implementations use a word-dividing function which made use of the bounding boxes and some threshold. Defining the thresholds that separate words from each other has shown to be quite problematic.
 
