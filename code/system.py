@@ -12,6 +12,8 @@ import scipy
 import cv2
 from skimage.util import random_noise
 import operator
+from nltk.corpus import brown
+from autocorrect import spell
 
 def reduce_dimensions(features, model, mode="Train", split=0, start=1, end=60):
     """Dimension reducation function
@@ -324,18 +326,52 @@ def correct_errors(page, labels, bboxes, model):
     Returns:
     Labels after being subjected to error correction
     """
-    # english = model['english']
-    # all_words = divide_to_words(labels, bboxes)
-    # for i in range(len(all_words)):
-    #     potential_match = difflib.get_close_matches(all_words[i], english)
-    #     if (len(all_words[i]) > 1 and len(potential_match) > 0 and potential_match[0] != all_words[i]):
-    #         print('checking word ', all_words[i], ' potential matches')
-    #         for j in potential_match:
-    #             difference = sum (j != all_words[i] for i in range(len(j)))
-    #             if (difference == 1):
-    #                 print('we will change: ',  all_words[i], ' to ', j)
+    word_list = brown.words()
+    word_set = set(word_list)
+
+    # Check if word is in set
+    all_words, current_labels = divide_to_words(labels, bboxes)
+    for i in range(len(all_words)):
+        if not (all_words[i] in word_set):
+            old = all_words[i]
+            all_words[i] = spell(all_words[i])
+            if (len(old) < len(all_words[i])):
+                for j in range(len(old)):
+                    if old[j] != all_words[i][j]:
+                        indices = current_labels[i]
+                        labels[int(indices[j])] = all_words[i][j]
+            else:
+                for j in range(len(all_words[i])):
+                    if old[j] != all_words[i][j]:
+                        indices = current_labels[i]
+                        labels[int(indices[j])] = all_words[i][j]
+        # potential_match = difflib.get_close_matches(all_words[i], english)
+        # if (len(all_words[i]) > 1 and len(potential_match) > 0 and potential_match[0] != all_words[i]):
+        #     print('checking word ', all_words[i], ' potential matches')
+        #     for j in potential_match:
+        #         difference = sum (j != all_words[i] for i in range(len(j)))
+        #         if (difference == 1):
+        #             print('we will change: ',  all_words[i], ' to ', j)
 
     return labels
+
+def divide_to_words(labels, bboxes):
+    all_words = []
+    all_labels = []
+    current_word = labels[0]
+    current_label = ['0']
+    for i in range(1, labels.shape[0]):
+        if (bboxes[i, 0] - bboxes[i-1, 2] < 6):
+            if (labels[i] != '.' and labels[i] != ',' and labels[i] != ':' and labels[i] != '!' and labels[i] != '?' and labels[i] != ';'):
+                current_word += labels[i]
+                current_label.append(str(i))
+        else:
+            all_words.append(current_word)
+            all_labels.append(current_nums)
+            if (labels[i] != '.' and labels[i] != ',' and labels[i] != ':' and labels[i] != '!' and labels[i] != '?' and labels[i] != ';'):
+                current_word = labels[i]
+                current_label = [str(i)]
+    return all_words, all_labels
 
 def images_to_feature_vectors(images, bbox_size=None):
     """Reformat characters into feature vectors.
