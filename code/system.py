@@ -306,7 +306,7 @@ def get_bounding_box_size(images):
     width = max(image.shape[1] for image in images)
     return height, width
 
-def correct_errors(page, labels, bboxes, model, use=True, version='One'):
+def correct_errors(page, labels, bboxes, model, use=False, version='One'):
     """Error correction function
 
     Version One: (Uses NLTK and autocorrect libraries)
