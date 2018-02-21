@@ -14,12 +14,12 @@ Given some PDF pages to test and bounding boxes for letters, the system takes in
 - Forward sequential search
 
 ## Results
-![97.4% Accuracy](data/dev/page.1.png)
-![96.4% Accuracy](data/dev/page.2.png)
-![86.2% Accuracy](data/dev/page.3.png)
-![60.4% Accuracy](data/dev/page.4.png)
-![60.9% Accuracy](data/dev/page.5.png)
-![50.7% Accuracy](data/dev/page.6.png)
+- 97.4% Accuracy ![97.4% Accuracy](data/dev/page.1.png)
+- 96.4% Accuracy ![96.4% Accuracy](data/dev/page.2.png)
+- 86.2% Accuracy ![86.2% Accuracy](data/dev/page.3.png)
+- 60.4% Accuracy ![60.4% Accuracy](data/dev/page.4.png)
+- 60.9% Accuracy ![60.9% Accuracy](data/dev/page.5.png)
+- 50.7% Accuracy ![50.7% Accuracy](data/dev/page.6.png)
 
 ## To run
 Training stage:   `python code/train.py`
